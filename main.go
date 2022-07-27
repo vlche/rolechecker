@@ -61,6 +61,10 @@ func main() {
 }
 
 func roleCheckMongo() {
+	var (
+		port = "27017"
+		err  error
+	)
 	type mongoHelloStruct struct {
 		SetName           string
 		IsWritablePrimary bool
@@ -73,8 +77,9 @@ func roleCheckMongo() {
 		Username:   flagUser,
 		Password:   flagPassword,
 	}
+	flagURL, port, err = parseURL(flagURL, port)
 	clientOpts := options.Client().
-		ApplyURI("mongodb://" + flagURL).
+		ApplyURI("mongodb://" + flagURL + ":" + port).
 		SetAuth(credential).
 		SetDirect(true)
 	client, err := mongo.Connect(context.TODO(), clientOpts)
@@ -101,16 +106,16 @@ func roleCheckMongo() {
 	}
 	fmt.Println("Unknown")
 	os.Exit(2)
-
-	// log.Println(mongoHello.Me)
 }
 
 func roleCheckRedis() {
-	const (
-		redisPort = 6379
+	var (
+		port = "6379"
+		err  error
 	)
+	flagURL, port, err = parseURL(flagURL, port)
 	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", flagURL, redisPort),
+		Addr:     flagURL + ":" + port,
 		Password: flagPassword,
 	})
 	rawstatus, err := client.Do("role").Result()
@@ -146,11 +151,13 @@ func roleCheckRedis() {
 }
 
 func roleCheckPostgres() {
-	const (
+	var (
 		dbname = "postgres"
-		port   = 5432
+		port   = "5432"
+		err    error
 	)
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", flagURL, port, flagUser, flagPassword, dbname)
+	flagURL, port, err = parseURL(flagURL, port)
+	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", flagURL, port, flagUser, flagPassword, dbname)
 	db, err := sql.Open("postgres", psqlconn)
 	if err != nil {
 		panic(err)
